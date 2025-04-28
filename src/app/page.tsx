@@ -2,9 +2,9 @@
 // TODO: Fix TS errors
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, User, Briefcase, Lightbulb, GraduationCap, Mail, Github, Linkedin, ArrowDown, ArrowRight, Send, Loader2, Phone, MapPin, Link as LinkIcon } from 'lucide-react';
+import { Home, User, Briefcase, Lightbulb, GraduationCap, Mail, Github, Linkedin, ArrowDown, ArrowRight, Send, Loader2, Phone, MapPin, Link as LinkIcon, ServerIcon } from 'lucide-react';
 import { TypeAnimation } from 'react-type-animation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -18,112 +18,24 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { sendEmailAction } from '@/actions/send-email'; // Import the server action
+import { sendEmailAction } from '@/actions/send-email';
+import { getPortfolioData } from '@/actions/portfolio-actions'; // Import the server action to fetch data
+import type { PortfolioData } from '@/lib/portfolio-schema'; // Import the type
 
 // Define section types
 type Section = 'home' | 'about' | 'experience' | 'projects' | 'education' | 'contact';
 
-// Content Data (Replace with data fetched from admin panel in a real app)
-const portfolioData = {
-  name: 'Naman Kumar',
-  email: 'namankumarcu@gmail.com',
-  location: 'Shekhpur Thant, Bijnor, Uttar Pradesh',
-  phone: '+91 8630495616',
-  github: 'https://github.com/namanchauhan1026',
-  linkedin: 'https://linkedin.com/in/naman-kumar',
-  portfolioLink: 'https://naman-kumar.com', // Assuming this is the portfolio link
-  objective: 'To leverage my full-stack development skills in building scalable, efficient, and user-centric software solutions. I aim to contribute to innovative projects using modern technologies like Node.js, React, GraphQL, and MongoDB, while continuously learning and growing as a developer in a collaborative and challenging environment.',
-  skills: {
-    languages: ['TypeScript', 'JavaScript', 'Java', 'C++', 'HTML', 'CSS'],
-    frontend: ['React.js'],
-    backend: ['Node.js', 'Express.js', 'Socket.IO', 'Node-Cron'],
-    database: ['MongoDB', 'PostgreSQL', 'MySQL', 'Redis', 'Prisma', 'Sequelize'],
-    tools: ['GitHub', 'Postman', 'VS-Code', 'Firebase', 'REST', 'GraphQL'],
-  },
-  experience: [
-    {
-      title: 'Full Stack Developer',
-      company: 'Galler India (LMD Pvt Ltd)',
-      duration: 'Present',
-      project: 'NOC (Network Operation Center)',
-      description: [
-        'Built a scalable NOC system for real-time monitoring and operations on IoT devices.',
-        'Enabled dynamic device onboarding with MongoDB-based dynamic schema generation.',
-        'Integrated role-based access control and modular architecture for better permission management.',
-        'Implemented GraphQL with advanced filtering, real-time alerts via Socket.IO, and PostgreSQL via Prisma.',
-        'Developed location hierarchy, device grouping, dynamic responses, and subscription management.',
-      ],
-    },
-    {
-      title: 'Full Stack Developer',
-      company: 'ApnaBillBook',
-      duration: 'Nov 2023 - Jan 2024', // Corrected end date based on context
-      description: [
-        'Developed scalable backend using Node.js and MySQL.',
-        'Integrated Razorpay for payments, Shiprocket for order delivery, and third-party apps for order intake.',
-        'Implemented Firebase + JWT authentication, and WhatsApp messaging using Meta API with RedisBull queue.',
-        'Delivered features like stock settlement, appointment booking, supplier/due/order management, KOT, and bulk product upload using Excel.',
-      ],
-    },
-  ],
-  projects: [
-    {
-      title: 'E-commerce Website',
-      stack: 'MERN Stack',
-      duration: 'Mar 2024 – Jun 2024',
-      description: [
-        'Built a complete e-commerce system with Razorpay payments and scalable architecture.',
-        'Designed responsive UI for shopping experience with real-time order tracking.',
-      ],
-    },
-    {
-      title: 'Live Coders - Real-time Code Collaboration',
-      stack: 'MERN Stack',
-      duration: 'Jan 2024 – May 2024',
-      description: [
-        'Created a code editor for up to 10 users with synchronized updates using WebSockets.',
-        'Enabled collaborative coding sessions with smooth real-time interface.',
-      ],
-    },
-     {
-      title: 'Plant Disease Detection',
-      stack: 'Python, Machine Learning',
-      duration: 'Aug 2023 – Dec 2023',
-      description: [
-         'Built an image classifier to detect plant diseases with 90%+ accuracy.',
-         'Developed web interface for uploading images and displaying model predictions.',
-      ],
-    },
-  ],
-  education: [
-    {
-      degree: 'Bachelor of Engineering (CSE)',
-      institution: 'Chandigarh University, Punjab',
-      duration: '2020 – 2024',
-    },
-    {
-      degree: 'Senior Secondary and Secondary (12th & 10th)',
-      institution: 'Parker Public Sr. Sec School',
-      duration: '2018 – 2020',
-    },
-  ],
-   certifications: [
-    'Software Testing (NPTEL)',
-    'Web Development Internship (Activecraft)',
-    'Machine Learning (Coursera)',
-    'Java (Coursera)',
-    'AWS (Coursera)',
-  ],
-  languagesKnown: ['Hindi', 'English'],
-};
-
 // Section Order for Navigation
 const sectionOrder: Section[] = ['home', 'about', 'experience', 'projects', 'education', 'contact'];
 
-// Props interface for sections needing navigation
+// Props interface for sections needing navigation or data
 interface SectionProps {
-  data: typeof portfolioData;
+  data: PortfolioData;
   setActiveSection: (section: Section) => void;
+}
+
+interface ContactSectionProps {
+    data: PortfolioData;
 }
 
 // Contact Form Schema
@@ -136,7 +48,8 @@ const contactFormSchema = z.object({
 type ContactFormValues = z.infer<typeof contactFormSchema>;
 
 
-// Component Definitions
+// --- Component Definitions ---
+
 const Navbar = ({ activeSection, setActiveSection }: { activeSection: Section; setActiveSection: (section: Section) => void }) => {
   const navItems: { id: Section; label: string; icon: React.ElementType }[] = [
     { id: 'home', label: 'Home', icon: Home },
@@ -197,7 +110,7 @@ const NextSectionButton: React.FC<{ onClick: () => void, nextSectionLabel: strin
   </Button>
 );
 
-const HomeSection: React.FC<{ data: typeof portfolioData; setActiveSection: (section: Section) => void }> = ({ data, setActiveSection }) => (
+const HomeSection: React.FC<SectionProps> = ({ data, setActiveSection }) => (
  <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] text-center">
     <motion.div
       initial={{ opacity: 0, scale: 0.5 }}
@@ -208,18 +121,19 @@ const HomeSection: React.FC<{ data: typeof portfolioData; setActiveSection: (sec
         ease: [0, 0.71, 0.2, 1.01] // Custom bounce effect
       }}
     >
-      <Avatar className="w-32 h-32 mb-6 border-4 border-accent shadow-lg">
-        <AvatarImage src="https://picsum.photos/200" alt={data.name} />
-        <AvatarFallback>{data.name.charAt(0)}</AvatarFallback>
+      <Avatar className="w-32 h-32 mb-6 border-4 border-accent shadow-lg animate-bounce-subtle"> {/* Added animation */}
+        {/* Use a dynamic image source if available in data, otherwise fallback */}
+        <AvatarImage src={data.profileImageUrl || "https://picsum.photos/200"} alt={data.name} />
+        <AvatarFallback>{data.name?.charAt(0) || 'N'}</AvatarFallback>
       </Avatar>
     </motion.div>
     <motion.h1
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.3 }}
-      className="text-4xl md:text-6xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent" // Added gradient text
+      className="text-4xl md:text-6xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-primary animate-gradient-x" // Added gradient animation
     >
-      {data.name}
+      {data.name || 'Naman Kumar'}
     </motion.h1>
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -261,7 +175,7 @@ const HomeSection: React.FC<{ data: typeof portfolioData; setActiveSection: (sec
          { href: data.github, label: 'GitHub', icon: Github },
          { href: data.linkedin, label: 'LinkedIn', icon: Linkedin },
          { href: `mailto:${data.email}`, label: 'Email', icon: Mail },
-       ].map((item, index) => (
+       ].map((item, index) => item.href && ( // Only render if href exists
           <motion.div
             key={item.label}
             variants={{
@@ -296,11 +210,10 @@ const HomeSection: React.FC<{ data: typeof portfolioData; setActiveSection: (sec
   </div>
 );
 
-
 const AboutSection: React.FC<SectionProps> = ({ data, setActiveSection }) => {
   const nextSectionIndex = sectionOrder.indexOf('about') + 1;
-  const nextSectionId = sectionOrder[nextSectionIndex];
-  const nextSectionLabel = sectionOrder[nextSectionIndex].charAt(0).toUpperCase() + sectionOrder[nextSectionIndex].slice(1);
+  const nextSectionId = sectionOrder[nextSectionIndex % sectionOrder.length]; // Wrap around if last section
+  const nextSectionLabel = nextSectionId.charAt(0).toUpperCase() + nextSectionId.slice(1);
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm animate-fade-in">
@@ -309,29 +222,31 @@ const AboutSection: React.FC<SectionProps> = ({ data, setActiveSection }) => {
         <Separator className="my-2 bg-border/50"/>
       </CardHeader>
       <CardContent>
-        <p className="text-lg mb-6">{data.objective}</p>
+        <p className="text-lg mb-6">{data.objective || 'Objective not available.'}</p>
 
         <h3 className="text-2xl font-semibold mb-4 text-primary">Technical Skills</h3>
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-          {Object.entries(data.skills).map(([category, skillsList]) => (
-            <Card key={category} className="bg-secondary/50 transition-shadow duration-300 hover:shadow-lg hover:shadow-accent/20">
-              <CardHeader>
-                <CardTitle className="text-xl capitalize text-accent">{category}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="list-disc list-inside space-y-1 text-foreground/90">
-                  {skillsList.map((skill) => (
-                    <li key={skill}>{skill}</li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+          {data.skills && Object.entries(data.skills).map(([category, skillsList]) => (
+            skillsList && skillsList.length > 0 && ( // Check if skillsList exists and is not empty
+              <Card key={category} className="bg-secondary/50 transition-shadow duration-300 hover:shadow-lg hover:shadow-accent/20">
+                <CardHeader>
+                  <CardTitle className="text-xl capitalize text-accent">{category}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="list-disc list-inside space-y-1 text-foreground/90">
+                    {skillsList.map((skill) => (
+                      <li key={skill}>{skill}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )
           ))}
         </div>
 
          <h3 className="text-2xl font-semibold mb-4 text-primary">Languages Known</h3>
         <div className="flex space-x-4 text-lg mb-6">
-          {data.languagesKnown.map((lang) => (
+          {data.languagesKnown && data.languagesKnown.map((lang) => (
             <span key={lang} className="bg-secondary/50 px-3 py-1 rounded-md">{lang}</span>
           ))}
         </div>
@@ -345,8 +260,8 @@ const AboutSection: React.FC<SectionProps> = ({ data, setActiveSection }) => {
 
 const ExperienceSection: React.FC<SectionProps> = ({ data, setActiveSection }) => {
    const nextSectionIndex = sectionOrder.indexOf('experience') + 1;
-   const nextSectionId = sectionOrder[nextSectionIndex];
-   const nextSectionLabel = sectionOrder[nextSectionIndex].charAt(0).toUpperCase() + sectionOrder[nextSectionIndex].slice(1);
+   const nextSectionId = sectionOrder[nextSectionIndex % sectionOrder.length];
+   const nextSectionLabel = nextSectionId.charAt(0).toUpperCase() + nextSectionId.slice(1);
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm animate-fade-in">
@@ -355,7 +270,7 @@ const ExperienceSection: React.FC<SectionProps> = ({ data, setActiveSection }) =
          <Separator className="my-2 bg-border/50"/>
       </CardHeader>
       <CardContent className="space-y-6">
-        {data.experience.map((exp, index) => (
+        {data.experience && data.experience.map((exp, index) => (
           <motion.div
             key={index}
             initial={{ opacity: 0, x: -20 }}
@@ -367,7 +282,7 @@ const ExperienceSection: React.FC<SectionProps> = ({ data, setActiveSection }) =
             <p className="text-lg text-muted-foreground">{exp.company} | {exp.duration}</p>
             {exp.project && <p className="font-medium mt-1">Project: {exp.project}</p>}
             <ul className="list-disc list-inside mt-2 space-y-1 text-foreground/90">
-              {exp.description.map((desc, i) => (
+              {exp.description && exp.description.map((desc, i) => (
                 <li key={i}>{desc}</li>
               ))}
             </ul>
@@ -383,8 +298,8 @@ const ExperienceSection: React.FC<SectionProps> = ({ data, setActiveSection }) =
 
 const ProjectsSection: React.FC<SectionProps> = ({ data, setActiveSection }) => {
    const nextSectionIndex = sectionOrder.indexOf('projects') + 1;
-   const nextSectionId = sectionOrder[nextSectionIndex];
-   const nextSectionLabel = sectionOrder[nextSectionIndex].charAt(0).toUpperCase() + sectionOrder[nextSectionIndex].slice(1);
+   const nextSectionId = sectionOrder[nextSectionIndex % sectionOrder.length];
+   const nextSectionLabel = nextSectionId.charAt(0).toUpperCase() + nextSectionId.slice(1);
 
   return (
    <Card className="bg-card/80 backdrop-blur-sm animate-fade-in">
@@ -393,7 +308,7 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, setActiveSection }) => 
         <Separator className="my-2 bg-border/50"/>
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {data.projects.map((proj, index) => (
+        {data.projects && data.projects.map((proj, index) => (
           <motion.div
             key={index}
             initial={{ opacity: 0, scale: 0.9 }}
@@ -407,7 +322,7 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, setActiveSection }) => 
               </CardHeader>
               <CardContent className="flex-grow">
                 <ul className="list-disc list-inside space-y-1 text-foreground/90">
-                  {proj.description.map((desc, i) => (
+                  {proj.description && proj.description.map((desc, i) => (
                     <li key={i}>{desc}</li>
                   ))}
                 </ul>
@@ -425,8 +340,8 @@ const ProjectsSection: React.FC<SectionProps> = ({ data, setActiveSection }) => 
 
 const EducationSection: React.FC<SectionProps> = ({ data, setActiveSection }) => {
    const nextSectionIndex = sectionOrder.indexOf('education') + 1;
-   const nextSectionId = sectionOrder[nextSectionIndex];
-   const nextSectionLabel = sectionOrder[nextSectionIndex].charAt(0).toUpperCase() + sectionOrder[nextSectionIndex].slice(1);
+   const nextSectionId = sectionOrder[nextSectionIndex % sectionOrder.length];
+   const nextSectionLabel = nextSectionId.charAt(0).toUpperCase() + nextSectionId.slice(1);
 
   return (
    <Card className="bg-card/80 backdrop-blur-sm animate-fade-in">
@@ -437,7 +352,7 @@ const EducationSection: React.FC<SectionProps> = ({ data, setActiveSection }) =>
       <CardContent>
         <h3 className="text-2xl font-semibold mb-4 text-primary">Education</h3>
         <div className="space-y-4 mb-6">
-          {data.education.map((edu, index) => (
+          {data.education && data.education.map((edu, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
@@ -453,7 +368,7 @@ const EducationSection: React.FC<SectionProps> = ({ data, setActiveSection }) =>
 
         <h3 className="text-2xl font-semibold mb-4 text-primary">Certifications</h3>
          <div className="flex flex-wrap gap-3">
-          {data.certifications.map((cert, index) => (
+          {data.certifications && data.certifications.map((cert, index) => (
              <motion.span
               key={index}
               initial={{ opacity: 0, scale: 0.8 }}
@@ -473,7 +388,7 @@ const EducationSection: React.FC<SectionProps> = ({ data, setActiveSection }) =>
   );
 };
 
-const ContactSection: React.FC<{ data: typeof portfolioData }> = ({ data }) => {
+const ContactSection: React.FC<ContactSectionProps> = ({ data }) => {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const form = useForm<ContactFormValues>({
@@ -516,34 +431,46 @@ const ContactSection: React.FC<{ data: typeof portfolioData }> = ({ data }) => {
            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
             Feel free to reach out via the form, email, or connect on social media.
           </motion.p>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="flex items-center space-x-3 hover:text-accent transition-colors duration-200 group">
-            <Mail className="h-5 w-5 text-muted-foreground group-hover:text-accent transition-colors duration-200" />
-            <a href={`mailto:${data.email}`} className="break-all">{data.email}</a>
-          </motion.div>
+          {data.email && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="flex items-center space-x-3 hover:text-accent transition-colors duration-200 group">
+                <Mail className="h-5 w-5 text-muted-foreground group-hover:text-accent transition-colors duration-200" />
+                <a href={`mailto:${data.email}`} className="break-all">{data.email}</a>
+            </motion.div>
+          )}
+          {data.phone && (
            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="flex items-center space-x-3 group">
              <Phone className="h-5 w-5 text-muted-foreground" />
             <span>{data.phone}</span>
           </motion.div>
+          )}
+          {data.location && (
            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="flex items-start space-x-3 group">
              <MapPin className="h-5 w-5 text-muted-foreground mt-1 shrink-0" />
             <span>{data.location}</span>
           </motion.div>
+          )}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="flex flex-wrap gap-4 pt-4">
-              <Link href={data.github} target="_blank" passHref legacyBehavior>
-                <Button variant="outline" className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200">
-                    <Github className="mr-2 h-4 w-4" /> GitHub
-                </Button>
-              </Link>
-              <Link href={data.linkedin} target="_blank" passHref legacyBehavior>
-                <Button variant="outline" className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200">
-                    <Linkedin className="mr-2 h-4 w-4" /> LinkedIn
-                </Button>
-              </Link>
-               <Link href={data.portfolioLink} target="_blank" passHref legacyBehavior>
-                <Button variant="outline" className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200">
-                     <LinkIcon className="mr-2 h-4 w-4" /> Portfolio
-                </Button>
-              </Link>
+              {data.github && (
+                  <Link href={data.github} target="_blank" passHref legacyBehavior>
+                    <Button variant="outline" className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200">
+                        <Github className="mr-2 h-4 w-4" /> GitHub
+                    </Button>
+                  </Link>
+              )}
+               {data.linkedin && (
+                  <Link href={data.linkedin} target="_blank" passHref legacyBehavior>
+                    <Button variant="outline" className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200">
+                        <Linkedin className="mr-2 h-4 w-4" /> LinkedIn
+                    </Button>
+                  </Link>
+               )}
+               {data.portfolioLink && (
+                   <Link href={data.portfolioLink} target="_blank" passHref legacyBehavior>
+                    <Button variant="outline" className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200">
+                         <LinkIcon className="mr-2 h-4 w-4" /> Portfolio
+                    </Button>
+                  </Link>
+               )}
           </motion.div>
         </div>
 
@@ -607,15 +534,78 @@ const ContactSection: React.FC<{ data: typeof portfolioData }> = ({ data }) => {
         </motion.div>
       </CardContent>
       {/* No "Next Section" button here as it's the last section */}
+       <CardFooter className="flex justify-end">
+         {/* Optionally add a button to go back to the home section */}
+         <Button
+            variant="ghost"
+            onClick={() => window.location.href = '/#home'} // Simple navigation back home for now
+            className="mt-6 group text-muted-foreground hover:text-accent"
+          >
+            Back to Home
+            <Home className="ml-2 h-4 w-4" />
+          </Button>
+      </CardFooter>
     </Card>
   );
 };
 
-// Main App Component
+// Loading Skeleton
+const SectionLoadingSkeleton = () => (
+    <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+        <Loader2 className="h-16 w-16 animate-spin text-accent" />
+    </div>
+);
+
+
+// --- Main App Component ---
 export default function PortfolioPage() {
   const [activeSection, setActiveSection] = useState<Section>('home');
+  const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getPortfolioData();
+        setPortfolioData(data);
+      } catch (err) {
+        console.error("Failed to load portfolio data:", err);
+        setError("Could not load portfolio content. Please try again later.");
+        // Optionally set default data here if needed on error
+        // setPortfolioData(defaultPortfolioData);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []); // Fetch data on initial mount
+
 
   const renderSection = () => {
+    if (loading) {
+      return <SectionLoadingSkeleton />;
+    }
+    if (error) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] text-center text-destructive">
+             <ServerIcon className="h-12 w-12 mb-4"/>
+             <p className="text-xl">{error}</p>
+         </div>
+      )
+    }
+     if (!portfolioData) {
+      return (
+         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] text-center text-muted-foreground">
+             <ServerIcon className="h-12 w-12 mb-4"/>
+             <p className="text-xl">Portfolio data is currently unavailable.</p>
+         </div>
+       );
+    }
+
+
     switch (activeSection) {
       case 'home':
         return <HomeSection data={portfolioData} setActiveSection={setActiveSection} />;
@@ -628,7 +618,7 @@ export default function PortfolioPage() {
       case 'education':
         return <EducationSection data={portfolioData} setActiveSection={setActiveSection} />;
       case 'contact':
-        return <ContactSection data={portfolioData} />; // Contact section doesn't need setActiveSection
+        return <ContactSection data={portfolioData} />;
       default:
         return <HomeSection data={portfolioData} setActiveSection={setActiveSection} />;
     }
@@ -643,11 +633,14 @@ export default function PortfolioPage() {
       <main className="relative h-full pt-16"> {/* Ensure main content area respects navbar height */}
         <AnimatePresence mode="wait">
           <SectionWrapper key={activeSection} sectionId={activeSection}>
-            {renderSection()}
+            {/* Use Suspense boundary if needed for future async components within sections */}
+            <Suspense fallback={<SectionLoadingSkeleton />}>
+                {renderSection()}
+            </Suspense>
           </SectionWrapper>
         </AnimatePresence>
       </main>
-       {/* Admin Panel Link (Placeholder) */}
+       {/* Admin Panel Link */}
        <Link href="/admin" passHref legacyBehavior>
          <Button
             variant="secondary"
@@ -659,6 +652,5 @@ export default function PortfolioPage() {
          </Button>
         </Link>
     </div>
-    
   );
 }
