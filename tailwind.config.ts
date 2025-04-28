@@ -87,11 +87,27 @@ export default {
            '0%': { opacity: '0', transform: 'translateY(10px)' },
            '100%': { opacity: '1', transform: 'translateY(0)' },
          },
+         'gradient-x': { // Added for text gradient animation
+          '0%, 100%': {
+            'background-size':'200% 200%',
+            'background-position': 'left center'
+          },
+          '50%': {
+            'background-size':'200% 200%',
+            'background-position': 'right center'
+          }
+        },
+        'bounce-subtle': { // Added subtle bounce for avatar
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-3px)' },
+        }
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
   			'accordion-up': 'accordion-up 0.2s ease-out',
         'fade-in': 'fade-in 0.5s ease-out forwards', // Added fade-in animation utility
+        'gradient-x':'gradient-x 3s ease infinite', // Added gradient animation utility
+        'bounce-subtle': 'bounce-subtle 1.5s ease-in-out infinite', // Added subtle bounce utility
   		}
   	}
   },

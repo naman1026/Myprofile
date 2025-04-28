@@ -199,74 +199,103 @@ const NextSectionButton: React.FC<{ onClick: () => void, nextSectionLabel: strin
 
 const HomeSection: React.FC<{ data: typeof portfolioData; setActiveSection: (section: Section) => void }> = ({ data, setActiveSection }) => (
  <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] text-center">
-    <Avatar className="w-32 h-32 mb-6 border-4 border-accent shadow-lg">
-      <AvatarImage src="https://picsum.photos/200" alt={data.name} />
-      <AvatarFallback>{data.name.charAt(0)}</AvatarFallback>
-    </Avatar>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.5 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{
+        duration: 0.5,
+        delay: 0.1,
+        ease: [0, 0.71, 0.2, 1.01] // Custom bounce effect
+      }}
+    >
+      <Avatar className="w-32 h-32 mb-6 border-4 border-accent shadow-lg">
+        <AvatarImage src="https://picsum.photos/200" alt={data.name} />
+        <AvatarFallback>{data.name.charAt(0)}</AvatarFallback>
+      </Avatar>
+    </motion.div>
     <motion.h1
-      initial={{ opacity: 0, y: -20 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.2 }}
-      className="text-4xl md:text-6xl font-bold mb-2"
+      transition={{ duration: 0.5, delay: 0.3 }}
+      className="text-4xl md:text-6xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent" // Added gradient text
     >
       {data.name}
     </motion.h1>
     <motion.div
-      initial={{ opacity: 0, y: -20 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.4 }}
+      transition={{ duration: 0.5, delay: 0.5 }}
       className="text-xl md:text-2xl text-muted-foreground mb-6 h-8 md:h-10" // Added fixed height
     >
       <TypeAnimation
         sequence={[
-          'Full Stack Developer',
-          2000,
-          'Welcome to my Portfolio!',
-          2000,
-           'Building Scalable Solutions',
-          2000,
-           'Passionate about Code',
-          2000,
+          'Full Stack Developer', 2000,
+          'Welcome to my Portfolio!', 2000,
+          'Building Scalable Solutions', 2000,
+          'Passionate about Code', 2000,
         ]}
         wrapper="span"
         cursor={true}
         repeat={Infinity}
         style={{ display: 'inline-block' }}
+        className="text-accent" // Style the animation text
       />
     </motion.div>
     <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5, delay: 0.6 }}
+      initial="hidden"
+      animate="visible"
+      variants={{
+        hidden: { opacity: 0 },
+        visible: {
+          opacity: 1,
+          transition: {
+            delayChildren: 0.7, // Start after other elements
+            staggerChildren: 0.2, // Stagger the buttons
+          },
+        },
+      }}
       className="flex space-x-4 mb-8"
     >
-      <Link href={data.github} target="_blank" passHref legacyBehavior>
-        <Button variant="outline" size="icon" aria-label="GitHub" className="hover:bg-accent hover:text-accent-foreground">
-          <Github className="h-5 w-5" />
-        </Button>
-      </Link>
-      <Link href={data.linkedin} target="_blank" passHref legacyBehavior>
-        <Button variant="outline" size="icon" aria-label="LinkedIn" className="hover:bg-accent hover:text-accent-foreground">
-          <Linkedin className="h-5 w-5" />
-        </Button>
-      </Link>
-       <Link href={`mailto:${data.email}`} passHref legacyBehavior>
-        <Button variant="outline" size="icon" aria-label="Email" className="hover:bg-accent hover:text-accent-foreground">
-          <Mail className="h-5 w-5" />
-        </Button>
-      </Link>
+       {/* Stagger animation for buttons */}
+       {[
+         { href: data.github, label: 'GitHub', icon: Github },
+         { href: data.linkedin, label: 'LinkedIn', icon: Linkedin },
+         { href: `mailto:${data.email}`, label: 'Email', icon: Mail },
+       ].map((item, index) => (
+          <motion.div
+            key={item.label}
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 },
+            }}
+          >
+            <Link href={item.href} target={item.label !== 'Email' ? "_blank" : undefined} passHref legacyBehavior>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label={item.label}
+                className="hover:bg-accent hover:text-accent-foreground transition-all duration-300 hover:scale-110 hover:shadow-lg hover:shadow-accent/30"
+              >
+                <item.icon className="h-5 w-5" />
+              </Button>
+            </Link>
+         </motion.div>
+       ))}
     </motion.div>
      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.8 }}
+        transition={{ duration: 0.5, delay: 1.3 }} // Delayed animation
+        whileHover={{ scale: 1.05 }} // Scale on hover
+        whileTap={{ scale: 0.95 }} // Scale on tap/click
       >
-         <Button onClick={() => setActiveSection('about')} className="bg-accent text-accent-foreground hover:bg-accent/90 group">
+         <Button onClick={() => setActiveSection('about')} className="bg-accent text-accent-foreground hover:bg-accent/90 group shadow-md hover:shadow-lg transition-all duration-300">
             Learn More About Me <ArrowDown className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-y-1" />
         </Button>
      </motion.div>
   </div>
 );
+
 
 const AboutSection: React.FC<SectionProps> = ({ data, setActiveSection }) => {
   const nextSectionIndex = sectionOrder.indexOf('about') + 1;
