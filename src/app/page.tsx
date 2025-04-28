@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, User, Briefcase, Lightbulb, GraduationCap, Mail, Github, Linkedin } from 'lucide-react';
+import { Home, User, Briefcase, Lightbulb, GraduationCap, Mail, Github, Linkedin, ArrowDown, ArrowRight } from 'lucide-react';
+import { TypeAnimation } from 'react-type-animation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
@@ -46,7 +47,7 @@ const portfolioData = {
     {
       title: 'Full Stack Developer',
       company: 'ApnaBillBook',
-      duration: 'Nov 2023 - Jan 2025', // Note: End date Jan 2025 seems like a typo, assuming Jan 2024 or adjust as needed
+      duration: 'Nov 2023 - Jan 2024', // Corrected end date based on context
       description: [
         'Developed scalable backend using Node.js and MySQL.',
         'Integrated Razorpay for payments, Shiprocket for order delivery, and third-party apps for order intake.',
@@ -106,6 +107,15 @@ const portfolioData = {
   languagesKnown: ['Hindi', 'English'],
 };
 
+// Section Order for Navigation
+const sectionOrder: Section[] = ['home', 'about', 'experience', 'projects', 'education', 'contact'];
+
+// Props interface for sections needing navigation
+interface SectionProps {
+  data: typeof portfolioData;
+  setActiveSection: (section: Section) => void;
+}
+
 
 // Component Definitions
 const Navbar = ({ activeSection, setActiveSection }: { activeSection: Section; setActiveSection: (section: Section) => void }) => {
@@ -121,7 +131,7 @@ const Navbar = ({ activeSection, setActiveSection }: { activeSection: Section; s
   return (
     <nav className="fixed top-0 left-0 right-0 z-10 bg-card bg-opacity-80 backdrop-blur-sm border-b border-border shadow-md">
       <div className="container mx-auto px-4 h-16 flex justify-center items-center">
-        <div className="flex space-x-2 md:space-x-4">
+        <div className="flex space-x-1 sm:space-x-2 md:space-x-4">
           {navItems.map((item) => (
             <Button
               key={item.id}
@@ -149,12 +159,23 @@ const SectionWrapper: React.FC<{ children: React.ReactNode; sectionId: Section }
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: -20 }}
     transition={{ duration: 0.4, ease: "easeInOut" }}
-    className="absolute inset-0 pt-16 overflow-y-auto" // Adjusted padding top
+    className="absolute inset-0 pt-16 overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-secondary" // Adjusted padding top & added scrollbar styling
   >
     <div className="container mx-auto px-4 py-8">
       {children}
     </div>
   </motion.div>
+);
+
+const NextSectionButton: React.FC<{ onClick: () => void, nextSectionLabel: string }> = ({ onClick, nextSectionLabel }) => (
+  <Button
+    variant="ghost"
+    onClick={onClick}
+    className="mt-6 group text-muted-foreground hover:text-accent"
+  >
+    Next: {nextSectionLabel}
+    <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+  </Button>
 );
 
 const HomeSection: React.FC<{ data: typeof portfolioData; setActiveSection: (section: Section) => void }> = ({ data, setActiveSection }) => (
@@ -171,14 +192,29 @@ const HomeSection: React.FC<{ data: typeof portfolioData; setActiveSection: (sec
     >
       {data.name}
     </motion.h1>
-    <motion.p
+    <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.4 }}
-      className="text-xl md:text-2xl text-muted-foreground mb-6"
+      className="text-xl md:text-2xl text-muted-foreground mb-6 h-8 md:h-10" // Added fixed height
     >
-      Full Stack Developer
-    </motion.p>
+      <TypeAnimation
+        sequence={[
+          'Full Stack Developer',
+          2000,
+          'Welcome to my Portfolio!',
+          2000,
+           'Building Scalable Solutions',
+          2000,
+           'Passionate about Code',
+          2000,
+        ]}
+        wrapper="span"
+        cursor={true}
+        repeat={Infinity}
+        style={{ display: 'inline-block' }}
+      />
+    </motion.div>
     <motion.div
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -186,17 +222,17 @@ const HomeSection: React.FC<{ data: typeof portfolioData; setActiveSection: (sec
       className="flex space-x-4 mb-8"
     >
       <Link href={data.github} target="_blank" passHref legacyBehavior>
-        <Button variant="outline" size="icon" aria-label="GitHub">
+        <Button variant="outline" size="icon" aria-label="GitHub" className="hover:bg-accent hover:text-accent-foreground">
           <Github className="h-5 w-5" />
         </Button>
       </Link>
       <Link href={data.linkedin} target="_blank" passHref legacyBehavior>
-        <Button variant="outline" size="icon" aria-label="LinkedIn">
+        <Button variant="outline" size="icon" aria-label="LinkedIn" className="hover:bg-accent hover:text-accent-foreground">
           <Linkedin className="h-5 w-5" />
         </Button>
       </Link>
        <Link href={`mailto:${data.email}`} passHref legacyBehavior>
-        <Button variant="outline" size="icon" aria-label="Email">
+        <Button variant="outline" size="icon" aria-label="Email" className="hover:bg-accent hover:text-accent-foreground">
           <Mail className="h-5 w-5" />
         </Button>
       </Link>
@@ -206,153 +242,188 @@ const HomeSection: React.FC<{ data: typeof portfolioData; setActiveSection: (sec
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.8 }}
       >
-         <Button onClick={() => setActiveSection('about')} className="bg-accent text-accent-foreground hover:bg-accent/90">
-            Learn More About Me
+         <Button onClick={() => setActiveSection('about')} className="bg-accent text-accent-foreground hover:bg-accent/90 group">
+            Learn More About Me <ArrowDown className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-y-1" />
         </Button>
      </motion.div>
-
   </div>
 );
 
-const AboutSection: React.FC<{ data: typeof portfolioData }> = ({ data }) => (
-  <Card className="bg-card/80 backdrop-blur-sm animate-fade-in">
-    <CardHeader>
-      <CardTitle className="text-3xl font-bold text-accent flex items-center"><User className="mr-2"/> About Me</CardTitle>
-      <Separator className="my-2 bg-border/50"/>
-    </CardHeader>
-    <CardContent>
-      <p className="text-lg mb-6">{data.objective}</p>
+const AboutSection: React.FC<SectionProps> = ({ data, setActiveSection }) => {
+  const nextSectionIndex = sectionOrder.indexOf('about') + 1;
+  const nextSectionId = sectionOrder[nextSectionIndex];
+  const nextSectionLabel = sectionOrder[nextSectionIndex].charAt(0).toUpperCase() + sectionOrder[nextSectionIndex].slice(1);
 
-      <h3 className="text-2xl font-semibold mb-4 text-primary">Technical Skills</h3>
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-        {Object.entries(data.skills).map(([category, skillsList]) => (
-          <Card key={category} className="bg-secondary/50 transition-shadow duration-300 hover:shadow-lg hover:shadow-accent/20">
-            <CardHeader>
-              <CardTitle className="text-xl capitalize text-accent">{category}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="list-disc list-inside space-y-1 text-foreground/90">
-                {skillsList.map((skill) => (
-                  <li key={skill}>{skill}</li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+  return (
+    <Card className="bg-card/80 backdrop-blur-sm animate-fade-in">
+      <CardHeader>
+        <CardTitle className="text-3xl font-bold text-accent flex items-center"><User className="mr-2"/> About Me</CardTitle>
+        <Separator className="my-2 bg-border/50"/>
+      </CardHeader>
+      <CardContent>
+        <p className="text-lg mb-6">{data.objective}</p>
 
-       <h3 className="text-2xl font-semibold mb-4 text-primary">Languages Known</h3>
-      <div className="flex space-x-4 text-lg">
-        {data.languagesKnown.map((lang) => (
-          <span key={lang} className="bg-secondary/50 px-3 py-1 rounded-md">{lang}</span>
-        ))}
-      </div>
-    </CardContent>
-  </Card>
-);
+        <h3 className="text-2xl font-semibold mb-4 text-primary">Technical Skills</h3>
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+          {Object.entries(data.skills).map(([category, skillsList]) => (
+            <Card key={category} className="bg-secondary/50 transition-shadow duration-300 hover:shadow-lg hover:shadow-accent/20">
+              <CardHeader>
+                <CardTitle className="text-xl capitalize text-accent">{category}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc list-inside space-y-1 text-foreground/90">
+                  {skillsList.map((skill) => (
+                    <li key={skill}>{skill}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
-const ExperienceSection: React.FC<{ data: typeof portfolioData }> = ({ data }) => (
-  <Card className="bg-card/80 backdrop-blur-sm animate-fade-in">
-    <CardHeader>
-      <CardTitle className="text-3xl font-bold text-accent flex items-center"><Briefcase className="mr-2"/> Professional Experience</CardTitle>
-       <Separator className="my-2 bg-border/50"/>
-    </CardHeader>
-    <CardContent className="space-y-6">
-      {data.experience.map((exp, index) => (
-        <motion.div
-          key={index}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: index * 0.1 }}
-          className="border-l-4 border-accent pl-4 py-2 transition-all duration-300 hover:bg-secondary/30 rounded-r-md"
-        >
-          <h3 className="text-xl font-semibold text-primary">{exp.title}</h3>
-          <p className="text-lg text-muted-foreground">{exp.company} | {exp.duration}</p>
-          {exp.project && <p className="font-medium mt-1">Project: {exp.project}</p>}
-          <ul className="list-disc list-inside mt-2 space-y-1 text-foreground/90">
-            {exp.description.map((desc, i) => (
-              <li key={i}>{desc}</li>
-            ))}
-          </ul>
-        </motion.div>
-      ))}
-    </CardContent>
-  </Card>
-);
+         <h3 className="text-2xl font-semibold mb-4 text-primary">Languages Known</h3>
+        <div className="flex space-x-4 text-lg mb-6">
+          {data.languagesKnown.map((lang) => (
+            <span key={lang} className="bg-secondary/50 px-3 py-1 rounded-md">{lang}</span>
+          ))}
+        </div>
+      </CardContent>
+       <CardFooter className="flex justify-end">
+        <NextSectionButton onClick={() => setActiveSection(nextSectionId)} nextSectionLabel={nextSectionLabel} />
+      </CardFooter>
+    </Card>
+  );
+};
 
-const ProjectsSection: React.FC<{ data: typeof portfolioData }> = ({ data }) => (
- <Card className="bg-card/80 backdrop-blur-sm animate-fade-in">
-    <CardHeader>
-      <CardTitle className="text-3xl font-bold text-accent flex items-center"><Lightbulb className="mr-2"/> Projects</CardTitle>
-      <Separator className="my-2 bg-border/50"/>
-    </CardHeader>
-    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {data.projects.map((proj, index) => (
-        <motion.div
-          key={index}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, delay: index * 0.1 }}
-        >
-          <Card className="h-full bg-secondary/50 flex flex-col transition-transform duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-accent/20">
-            <CardHeader>
-              <CardTitle className="text-xl text-primary">{proj.title}</CardTitle>
-              <CardDescription className="text-sm text-muted-foreground">{proj.stack} | {proj.duration}</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <ul className="list-disc list-inside space-y-1 text-foreground/90">
-                {proj.description.map((desc, i) => (
-                  <li key={i}>{desc}</li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </motion.div>
-      ))}
-    </CardContent>
-  </Card>
-);
+const ExperienceSection: React.FC<SectionProps> = ({ data, setActiveSection }) => {
+   const nextSectionIndex = sectionOrder.indexOf('experience') + 1;
+   const nextSectionId = sectionOrder[nextSectionIndex];
+   const nextSectionLabel = sectionOrder[nextSectionIndex].charAt(0).toUpperCase() + sectionOrder[nextSectionIndex].slice(1);
 
-const EducationSection: React.FC<{ data: typeof portfolioData }> = ({ data }) => (
- <Card className="bg-card/80 backdrop-blur-sm animate-fade-in">
-    <CardHeader>
-      <CardTitle className="text-3xl font-bold text-accent flex items-center"><GraduationCap className="mr-2"/> Education & Certifications</CardTitle>
-      <Separator className="my-2 bg-border/50"/>
-    </CardHeader>
-    <CardContent>
-      <h3 className="text-2xl font-semibold mb-4 text-primary">Education</h3>
-      <div className="space-y-4 mb-6">
-        {data.education.map((edu, index) => (
+  return (
+    <Card className="bg-card/80 backdrop-blur-sm animate-fade-in">
+      <CardHeader>
+        <CardTitle className="text-3xl font-bold text-accent flex items-center"><Briefcase className="mr-2"/> Professional Experience</CardTitle>
+         <Separator className="my-2 bg-border/50"/>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {data.experience.map((exp, index) => (
           <motion.div
             key={index}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
-            className="p-3 bg-secondary/50 rounded-md transition-shadow duration-300 hover:shadow-md hover:shadow-accent/10"
+            className="border-l-4 border-accent pl-4 py-2 transition-all duration-300 hover:bg-secondary/30 rounded-r-md"
           >
-            <p className="text-lg font-medium text-primary">{edu.degree}</p>
-            <p className="text-md text-muted-foreground">{edu.institution} | {edu.duration}</p>
+            <h3 className="text-xl font-semibold text-primary">{exp.title}</h3>
+            <p className="text-lg text-muted-foreground">{exp.company} | {exp.duration}</p>
+            {exp.project && <p className="font-medium mt-1">Project: {exp.project}</p>}
+            <ul className="list-disc list-inside mt-2 space-y-1 text-foreground/90">
+              {exp.description.map((desc, i) => (
+                <li key={i}>{desc}</li>
+              ))}
+            </ul>
           </motion.div>
         ))}
-      </div>
+      </CardContent>
+      <CardFooter className="flex justify-end">
+        <NextSectionButton onClick={() => setActiveSection(nextSectionId)} nextSectionLabel={nextSectionLabel} />
+      </CardFooter>
+    </Card>
+  );
+};
 
-      <h3 className="text-2xl font-semibold mb-4 text-primary">Certifications</h3>
-       <div className="flex flex-wrap gap-3">
-        {data.certifications.map((cert, index) => (
-           <motion.span
+const ProjectsSection: React.FC<SectionProps> = ({ data, setActiveSection }) => {
+   const nextSectionIndex = sectionOrder.indexOf('projects') + 1;
+   const nextSectionId = sectionOrder[nextSectionIndex];
+   const nextSectionLabel = sectionOrder[nextSectionIndex].charAt(0).toUpperCase() + sectionOrder[nextSectionIndex].slice(1);
+
+  return (
+   <Card className="bg-card/80 backdrop-blur-sm animate-fade-in">
+      <CardHeader>
+        <CardTitle className="text-3xl font-bold text-accent flex items-center"><Lightbulb className="mr-2"/> Projects</CardTitle>
+        <Separator className="my-2 bg-border/50"/>
+      </CardHeader>
+      <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {data.projects.map((proj, index) => (
+          <motion.div
             key={index}
-            initial={{ opacity: 0, scale: 0.8 }}
+            initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3, delay: index * 0.05 }}
-            className="bg-secondary/50 px-3 py-1 rounded-full text-sm text-foreground/90 shadow-sm"
-            >
-            {cert}
-            </motion.span>
+            transition={{ duration: 0.4, delay: index * 0.1 }}
+          >
+            <Card className="h-full bg-secondary/50 flex flex-col transition-transform duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-accent/20">
+              <CardHeader>
+                <CardTitle className="text-xl text-primary">{proj.title}</CardTitle>
+                <CardDescription className="text-sm text-muted-foreground">{proj.stack} | {proj.duration}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <ul className="list-disc list-inside space-y-1 text-foreground/90">
+                  {proj.description.map((desc, i) => (
+                    <li key={i}>{desc}</li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          </motion.div>
         ))}
-      </div>
-    </CardContent>
-  </Card>
-);
+      </CardContent>
+       <CardFooter className="flex justify-end">
+        <NextSectionButton onClick={() => setActiveSection(nextSectionId)} nextSectionLabel={nextSectionLabel} />
+      </CardFooter>
+    </Card>
+  );
+};
+
+const EducationSection: React.FC<SectionProps> = ({ data, setActiveSection }) => {
+   const nextSectionIndex = sectionOrder.indexOf('education') + 1;
+   const nextSectionId = sectionOrder[nextSectionIndex];
+   const nextSectionLabel = sectionOrder[nextSectionIndex].charAt(0).toUpperCase() + sectionOrder[nextSectionIndex].slice(1);
+
+  return (
+   <Card className="bg-card/80 backdrop-blur-sm animate-fade-in">
+      <CardHeader>
+        <CardTitle className="text-3xl font-bold text-accent flex items-center"><GraduationCap className="mr-2"/> Education & Certifications</CardTitle>
+        <Separator className="my-2 bg-border/50"/>
+      </CardHeader>
+      <CardContent>
+        <h3 className="text-2xl font-semibold mb-4 text-primary">Education</h3>
+        <div className="space-y-4 mb-6">
+          {data.education.map((edu, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="p-3 bg-secondary/50 rounded-md transition-shadow duration-300 hover:shadow-md hover:shadow-accent/10"
+            >
+              <p className="text-lg font-medium text-primary">{edu.degree}</p>
+              <p className="text-md text-muted-foreground">{edu.institution} | {edu.duration}</p>
+            </motion.div>
+          ))}
+        </div>
+
+        <h3 className="text-2xl font-semibold mb-4 text-primary">Certifications</h3>
+         <div className="flex flex-wrap gap-3">
+          {data.certifications.map((cert, index) => (
+             <motion.span
+              key={index}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
+              className="bg-secondary/50 px-3 py-1 rounded-full text-sm text-foreground/90 shadow-sm"
+              >
+              {cert}
+              </motion.span>
+          ))}
+        </div>
+      </CardContent>
+       <CardFooter className="flex justify-end">
+        <NextSectionButton onClick={() => setActiveSection(nextSectionId)} nextSectionLabel={nextSectionLabel} />
+      </CardFooter>
+    </Card>
+  );
+};
 
 const ContactSection: React.FC<{ data: typeof portfolioData }> = ({ data }) => (
   <Card className="bg-card/80 backdrop-blur-sm animate-fade-in">
@@ -376,7 +447,7 @@ const ContactSection: React.FC<{ data: typeof portfolioData }> = ({ data }) => (
          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-map-pin"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
         <span>{data.location}</span>
       </motion.div>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="flex space-x-4 pt-4">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="flex flex-wrap gap-4 pt-4">
           <Link href={data.github} target="_blank" passHref legacyBehavior>
             <Button variant="outline" className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200">
                 <Github className="mr-2 h-4 w-4" /> GitHub
@@ -396,6 +467,7 @@ const ContactSection: React.FC<{ data: typeof portfolioData }> = ({ data }) => (
       </motion.div>
 
     </CardContent>
+    {/* No "Next Section" button here as it's the last section */}
   </Card>
 );
 
@@ -408,15 +480,15 @@ export default function PortfolioPage() {
       case 'home':
         return <HomeSection data={portfolioData} setActiveSection={setActiveSection} />;
       case 'about':
-        return <AboutSection data={portfolioData} />;
+        return <AboutSection data={portfolioData} setActiveSection={setActiveSection} />;
       case 'experience':
-        return <ExperienceSection data={portfolioData} />;
+        return <ExperienceSection data={portfolioData} setActiveSection={setActiveSection} />;
       case 'projects':
-        return <ProjectsSection data={portfolioData} />;
+        return <ProjectsSection data={portfolioData} setActiveSection={setActiveSection} />;
       case 'education':
-        return <EducationSection data={portfolioData} />;
+        return <EducationSection data={portfolioData} setActiveSection={setActiveSection} />;
       case 'contact':
-        return <ContactSection data={portfolioData} />;
+        return <ContactSection data={portfolioData} />; // Contact section doesn't need setActiveSection
       default:
         return <HomeSection data={portfolioData} setActiveSection={setActiveSection} />;
     }
